@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/goravel/framework/support/carbon"
 	_ "modernc.org/sqlite"
 )
 
@@ -286,12 +287,9 @@ func TestStoreVersionUpdate(t *testing.T) {
 	db := initDB(":memory:")
 
 	store, err := NewStore(NewStoreOptions{
-		DB:                     db,
-		TableName:              "shop_version_update",
-		OrderTableName:         "shop_order_update",
-		OrderLineItemTableName: "shop_order_line_item_update",
-		ProductTableName:       "shop_product_update",
-		AutomigrateEnabled:     true,
+		DB:                 db,
+		TableName:          "shop_version_update",
+		AutomigrateEnabled: true,
 	})
 
 	if err != nil {
@@ -303,13 +301,10 @@ func TestStoreVersionUpdate(t *testing.T) {
 	}
 
 	version := NewVersion().
-		SetStatus(DISCOUNT_STATUS_DRAFT).
-		SetTitle("DISCOUNT_TITLE").
-		SetDescription("DISCOUNT_DESCRIPTION").
-		SetType(DISCOUNT_TYPE_AMOUNT).
-		SetAmount(19.99).
-		SetStartsAt(`2022-01-01 00:00:00`).
-		SetEndsAt(`2022-01-01 23:59:59`)
+		SetEntityType("discount").
+		SetEntityID("1").
+		SetRevision(1).
+		SetContent("content1")
 
 	err = store.VersionCreate(version)
 	if err != nil {
@@ -317,7 +312,8 @@ func TestStoreVersionUpdate(t *testing.T) {
 		return
 	}
 
-	version.SetTitle("DISCOUNT_TITLE_UPDATED")
+	now := carbon.Now(carbon.UTC).ToDateTimeString(carbon.UTC)
+	version.SetSoftDeletedAt(now)
 
 	err = store.VersionUpdate(version)
 	if err != nil {
@@ -325,17 +321,19 @@ func TestStoreVersionUpdate(t *testing.T) {
 		return
 	}
 
-	versionFound, errFind := store.VersionFindByID(version.ID())
+	versionList, errList := store.VersionList(NewVersionQuery().
+		SetID(version.ID()).
+		SetWithSoftDeleted(true))
 
-	if errFind != nil {
-		t.Fatal("unexpected error:", errFind)
+	if errList != nil {
+		t.Fatal("unexpected error:", errList)
 	}
 
-	if versionFound == nil {
-		t.Fatal("Version MUST NOT be nil")
+	if len(versionList) < 1 {
+		t.Fatal("Version list MUST NOT be 0")
 	}
 
-	if versionFound.Title() != "DISCOUNT_TITLE_UPDATED" {
-		t.Fatal("Version title MUST BE 'DISCOUNT_TITLE_UPDATED', found: ", versionFound.Title())
+	if !strings.Contains(versionList[0].SoftDeletedAt(), now) {
+		t.Fatal("Version soft deleted at MUST be equal. Expected: ", now, " Found: ", versionList[0].SoftDeletedAt())
 	}
 }
