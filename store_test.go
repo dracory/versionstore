@@ -6,12 +6,13 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/goravel/framework/support/carbon"
+	// "github.com/goravel/framework/support/carbon"
+	"github.com/golang-module/carbon/v2"
 	_ "modernc.org/sqlite"
 )
 
 func initDB(filepath string) *sql.DB {
-	os.Remove(filepath) // remove database
+	_ = os.Remove(filepath) // remove database
 	dsn := filepath + "?parseTime=true"
 	db, err := sql.Open("sqlite", dsn)
 
@@ -42,7 +43,6 @@ func TestStoreVersionCreate(t *testing.T) {
 	version := NewVersion().
 		SetEntityType("webpage").
 		SetEntityID("1").
-		SetRevision(1).
 		SetContent("content1")
 
 	err = store.VersionCreate(version)
@@ -72,7 +72,6 @@ func TestStoreVersionDelete(t *testing.T) {
 	version := NewVersion().
 		SetEntityType("webpage").
 		SetEntityID("1").
-		SetRevision(1).
 		SetContent("content1")
 
 	err = store.VersionCreate(version)
@@ -121,7 +120,6 @@ func TestStoreVersionDeleteByID(t *testing.T) {
 	version := NewVersion().
 		SetEntityType("webpage").
 		SetEntityID("1").
-		SetRevision(1).
 		SetContent("content1")
 
 	err = store.VersionCreate(version)
@@ -170,7 +168,6 @@ func TestStoreVersionFindByID(t *testing.T) {
 	version := NewVersion().
 		SetEntityType("discount").
 		SetEntityID("1").
-		SetRevision(1).
 		SetContent("content1")
 
 	err = store.VersionCreate(version)
@@ -202,10 +199,6 @@ func TestStoreVersionFindByID(t *testing.T) {
 
 	if versionFound.EntityID() != version.EntityID() {
 		t.Fatal("Version entity id MUST be equal. Expected: ", version.EntityID(), " Found: ", versionFound.EntityID())
-	}
-
-	if versionFound.Revision() != version.Revision() {
-		t.Fatal("Version revision MUST be equal. Expected: ", version.Revision(), " Found: ", versionFound.Revision())
 	}
 
 	if versionFound.Content() != version.Content() {
@@ -241,7 +234,6 @@ func TestStoreVersionSoftDelete(t *testing.T) {
 	version := NewVersion().
 		SetEntityType("webpage").
 		SetEntityID("1").
-		SetRevision(1).
 		SetContent("content1")
 
 	err = store.VersionCreate(version)
@@ -270,7 +262,7 @@ func TestStoreVersionSoftDelete(t *testing.T) {
 
 	versionList, errList := store.VersionList(NewVersionQuery().
 		SetID(version.ID()).
-		SetWithSoftDeleted(true))
+		SetSoftDeletedIncluded(true))
 
 	if errList != nil {
 		t.Fatal("unexpected error:", errList)
@@ -303,7 +295,6 @@ func TestStoreVersionUpdate(t *testing.T) {
 	version := NewVersion().
 		SetEntityType("discount").
 		SetEntityID("1").
-		SetRevision(1).
 		SetContent("content1")
 
 	err = store.VersionCreate(version)
@@ -323,7 +314,7 @@ func TestStoreVersionUpdate(t *testing.T) {
 
 	versionList, errList := store.VersionList(NewVersionQuery().
 		SetID(version.ID()).
-		SetWithSoftDeleted(true))
+		SetSoftDeletedIncluded(true))
 
 	if errList != nil {
 		t.Fatal("unexpected error:", errList)

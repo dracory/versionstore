@@ -1,36 +1,31 @@
 package versionstore
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"log"
+	"log/slog"
 	"strconv"
 	"strings"
 
 	"github.com/doug-martin/goqu/v9"
 	"github.com/goravel/framework/support/carbon"
+	"github.com/gouniverse/base/database"
 	"github.com/gouniverse/sb"
 	"github.com/samber/lo"
+	"github.com/spf13/cast"
 )
 
-// Store defines a store
-type store struct {
-	tableName          string
-	db                 *sql.DB
-	dbDriverName       string
-	automigrateEnabled bool
-	debugEnabled       bool
-}
-
-var _ StoreInterface = (*store)(nil)
+// == CONSTRUCTORS ============================================================
 
 // NewStoreOptions define the options for creating a new session store
 type NewStoreOptions struct {
 	TableName          string
 	DB                 *sql.DB
-	DbDriverName       string
 	AutomigrateEnabled bool
 	DebugEnabled       bool
+	Logger             *slog.Logger
 }
 
 // NewStore creates a new session store
@@ -39,36 +34,59 @@ func NewStore(opts NewStoreOptions) (StoreInterface, error) {
 		tableName:          opts.TableName,
 		automigrateEnabled: opts.AutomigrateEnabled,
 		db:                 opts.DB,
-		dbDriverName:       opts.DbDriverName,
 		debugEnabled:       opts.DebugEnabled,
 	}
 
 	if store.tableName == "" {
-		return nil, errors.New("log store: logTableName is required")
+		return nil, errors.New("version store: logTableName is required")
 	}
 
 	if store.db == nil {
-		return nil, errors.New("log store: DB is required")
+		return nil, errors.New("version store: DB is required")
 	}
 
-	if store.dbDriverName == "" {
-		store.dbDriverName = sb.DatabaseDriverName(store.db)
+	// Determine the database type
+	store.dbDriverName = database.DatabaseType(store.db)
+
+	// Set the default logger, if not provided
+	if opts.Logger == nil {
+		opts.Logger = slog.Default()
 	}
+
+	store.logger = opts.Logger
 
 	if store.automigrateEnabled {
-		store.AutoMigrate()
+		err := store.AutoMigrate()
+
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return store, nil
 }
 
+// == TYPE ====================================================================
+
+// Store defines a store
+type store struct {
+	tableName          string
+	db                 *sql.DB
+	dbDriverName       string
+	logger             *slog.Logger
+	automigrateEnabled bool
+	debugEnabled       bool
+}
+
+var _ StoreInterface = (*store)(nil)
+
 // AutoMigrate auto migrate
 func (store *store) AutoMigrate() error {
-	sql := store.sqlTableCreate()
+	sqlStr := store.sqlTableCreate()
 
-	_, err := store.db.Exec(sql)
+	_, err := store.db.Exec(sqlStr)
+
 	if err != nil {
-		log.Println(err)
 		return err
 	}
 
@@ -80,9 +98,20 @@ func (store *store) EnableDebug(debug bool) {
 	store.debugEnabled = debug
 }
 
+func (store *store) logSql(sqlStr string, sqlParams ...interface{}) {
+	if store.debugEnabled {
+		log.Println(sqlStr, sqlParams)
+	}
+}
+
 func (store *store) VersionCount(options VersionQueryInterface) (int64, error) {
 	options.SetCountOnly(true)
-	q := store.versionQuery(options)
+
+	q, _, err := store.versionQuery(options)
+
+	if err != nil {
+		return -1, err
+	}
 
 	sqlStr, params, errSql := q.Prepared(true).
 		Limit(1).
@@ -93,12 +122,10 @@ func (store *store) VersionCount(options VersionQueryInterface) (int64, error) {
 		return -1, nil
 	}
 
-	if store.debugEnabled {
-		log.Println(sqlStr)
-	}
+	store.logSql(sqlStr, params...)
 
-	db := sb.NewDatabase(store.db, store.dbDriverName)
-	mapped, err := db.SelectToMapString(sqlStr, params...)
+	mapped, err := database.SelectToMapString(context.TODO(), store.db, sqlStr, params...)
+
 	if err != nil {
 		return -1, err
 	}
@@ -136,10 +163,6 @@ func (store *store) VersionCreate(version VersionInterface) error {
 		return errors.New("version entity type should not be empty")
 	}
 
-	if version.Revision() < 1 {
-		return errors.New("version revision should be greater than 0")
-	}
-
 	version.SetCreatedAt(carbon.Now(carbon.UTC).ToDateTimeString(carbon.UTC))
 	version.SetSoftDeletedAt(sb.MAX_DATETIME)
 
@@ -155,9 +178,7 @@ func (store *store) VersionCreate(version VersionInterface) error {
 		return errSql
 	}
 
-	if store.debugEnabled {
-		log.Println(sqlStr)
-	}
+	store.logSql(sqlStr, params...)
 
 	_, err := store.db.Exec(sqlStr, params...)
 
@@ -193,9 +214,7 @@ func (store *store) VersionDeleteByID(id string) error {
 		return errSql
 	}
 
-	if store.debugEnabled {
-		log.Println(sqlStr)
-	}
+	store.logSql(sqlStr, params...)
 
 	_, err := store.db.Exec(sqlStr, params...)
 
@@ -221,20 +240,22 @@ func (store *store) VersionFindByID(id string) (VersionInterface, error) {
 }
 
 func (store *store) VersionList(options VersionQueryInterface) ([]VersionInterface, error) {
-	q := store.versionQuery(options)
+	q, columns, err := store.versionQuery(options)
 
-	sqlStr, _, errSql := q.Select().ToSQL()
+	if err != nil {
+		return []VersionInterface{}, err
+	}
+
+	sqlStr, sqlParams, errSql := q.Prepared(true).Select(columns...).ToSQL()
 
 	if errSql != nil {
-		return []VersionInterface{}, nil
+		return []VersionInterface{}, errSql
 	}
 
-	if store.debugEnabled {
-		log.Println(sqlStr)
-	}
+	store.logSql(sqlStr, sqlParams...)
 
-	db := sb.NewDatabase(store.db, store.dbDriverName)
-	modelMaps, err := db.SelectToMapString(sqlStr)
+	modelMaps, err := database.SelectToMapString(context.Background(), store.db, sqlStr, sqlParams...)
+
 	if err != nil {
 		return []VersionInterface{}, err
 	}
@@ -297,52 +318,50 @@ func (store *store) VersionUpdate(version VersionInterface) error {
 		return errSql
 	}
 
-	if store.debugEnabled {
-		log.Println(sqlStr)
-	}
+	store.logSql(sqlStr, params...)
 
 	_, err := store.db.Exec(sqlStr, params...)
+
+	if err != nil {
+		return err
+	}
 
 	version.MarkAsNotDirty()
 
 	return err
 }
 
-func (store *store) versionQuery(options VersionQueryInterface) *goqu.SelectDataset {
+func (store *store) versionQuery(options VersionQueryInterface) (selectDataset *goqu.SelectDataset, columns []any, err error) {
+	if options == nil {
+		return nil, nil, errors.New("options is nil")
+	}
+
+	if err := options.Validate(); err != nil {
+		return nil, nil, err
+	}
+
 	q := goqu.Dialect(store.dbDriverName).From(store.tableName)
 
-	if options.ID() != "" {
+	if options.HasID() {
 		q = q.Where(goqu.C(COLUMN_ID).Eq(options.ID()))
 	}
 
-	// if len(options.IDIn) > 0 {
-	// 	q = q.Where(goqu.C(COLUMN_ID).In(options.IDIn))
-	// }
-
-	// if options.CreatedAtGte != "" && options.CreatedAtLte != "" {
-	// 	q = q.Where(goqu.C(COLUMN_CREATED_AT).Between(exp.NewRangeVal(options.CreatedAtGte, options.CreatedAtLte)))
-	// } else if options.CreatedAtGte != "" {
-	// 	q = q.Where(goqu.C(COLUMN_CREATED_AT).Gte(options.CreatedAtGte))
-	// } else if options.CreatedAtLte != "" {
-	// 	q = q.Where(goqu.C(COLUMN_CREATED_AT).Lte(options.CreatedAtLte))
-	// }
-
-	if !options.CountOnly() {
-		if options.Limit() > 0 {
-			q = q.Limit(uint(options.Limit()))
+	if !options.IsCountOnly() {
+		if options.HasLimit() {
+			q = q.Limit(cast.ToUint(options.Limit()))
 		}
 
-		if options.Offset() > 0 {
-			q = q.Offset(uint(options.Offset()))
+		if options.HasOffset() {
+			q = q.Offset(cast.ToUint(options.Offset()))
 		}
 	}
 
 	sortOrder := sb.DESC
-	if options.SortOrder() != "" {
+	if options.HasSortOrder() {
 		sortOrder = options.SortOrder()
 	}
 
-	if options.OrderBy() != "" {
+	if options.HasOrderBy() {
 		if strings.EqualFold(sortOrder, sb.ASC) {
 			q = q.Order(goqu.I(options.OrderBy()).Asc())
 		} else {
@@ -350,12 +369,18 @@ func (store *store) versionQuery(options VersionQueryInterface) *goqu.SelectData
 		}
 	}
 
-	if options.WithSoftDeleted() {
-		return q
+	columns = []any{}
+
+	for _, column := range options.Columns() {
+		columns = append(columns, column)
+	}
+
+	if options.SoftDeletedIncluded() {
+		return q, columns, nil // soft deleted versions requested specifically
 	}
 
 	softDeleted := goqu.C(COLUMN_SOFT_DELETED_AT).
 		Gt(carbon.Now(carbon.UTC).ToDateTimeString())
 
-	return q.Where(softDeleted)
+	return q.Where(softDeleted), columns, nil
 }

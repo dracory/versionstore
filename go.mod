@@ -9,7 +9,7 @@ require (
 	github.com/gouniverse/uid v1.5.0
 	github.com/samber/lo v1.47.0
 	github.com/spf13/cast v1.7.0
-	modernc.org/sqlite v1.33.1
+	modernc.org/sqlite v1.34.1
 )
 
 require (
@@ -17,6 +17,7 @@ require (
 	github.com/georgysavva/scany v1.2.2 // indirect
 	github.com/golang-module/carbon/v2 v2.3.12 // indirect
 	github.com/google/uuid v1.6.0 // indirect
+	github.com/gouniverse/base v0.0.5
 	github.com/gouniverse/maputils v0.7.0 // indirect
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect

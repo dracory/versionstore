@@ -4,20 +4,9 @@ import (
 	"github.com/goravel/framework/support/carbon"
 	"github.com/gouniverse/sb"
 	"github.com/gouniverse/uid"
-	"github.com/spf13/cast"
 )
 
-type version struct {
-	id            string
-	entityType    string
-	entityID      string
-	revision      int
-	content       string
-	createdAt     string
-	softDeletedAt string
-}
-
-var _ VersionInterface = (*version)(nil)
+// == CONSTRUCTOR =============================================================
 
 func NewVersion() VersionInterface {
 	return &version{
@@ -32,19 +21,30 @@ func NewVersionFromExistingData(data map[string]string) VersionInterface {
 		id:            data[COLUMN_ID],
 		entityType:    data[COLUMN_ENTITY_TYPE],
 		entityID:      data[COLUMN_ENTITY_ID],
-		revision:      cast.ToInt(data[COLUMN_REVISION]),
 		content:       data[COLUMN_CONTENT],
 		createdAt:     data[COLUMN_CREATED_AT],
 		softDeletedAt: data[COLUMN_SOFT_DELETED_AT],
 	}
 }
 
+// == CLASS ==================================================================
+
+type version struct {
+	id            string
+	entityType    string
+	entityID      string
+	content       string
+	createdAt     string
+	softDeletedAt string
+}
+
+var _ VersionInterface = (*version)(nil)
+
 func (v *version) Data() map[string]string {
 	return map[string]string{
 		COLUMN_ID:              v.id,
 		COLUMN_ENTITY_TYPE:     v.entityType,
 		COLUMN_ENTITY_ID:       v.entityID,
-		COLUMN_REVISION:        cast.ToString(v.revision),
 		COLUMN_CONTENT:         v.content,
 		COLUMN_CREATED_AT:      v.createdAt,
 		COLUMN_SOFT_DELETED_AT: v.softDeletedAt,
@@ -108,15 +108,6 @@ func (v *version) ID() string {
 
 func (v *version) SetID(id string) VersionInterface {
 	v.id = id
-	return v
-}
-
-func (v *version) Revision() int {
-	return v.revision
-}
-
-func (v *version) SetRevision(revision int) VersionInterface {
-	v.revision = revision
 	return v
 }
 
