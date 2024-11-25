@@ -38,7 +38,7 @@ func NewStore(opts NewStoreOptions) (StoreInterface, error) {
 	}
 
 	if store.tableName == "" {
-		return nil, errors.New("version store: logTableName is required")
+		return nil, errors.New("version store: tableName is required")
 	}
 
 	if store.db == nil {
