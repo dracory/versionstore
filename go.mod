@@ -4,7 +4,7 @@ go 1.23.1
 
 require (
 	github.com/doug-martin/goqu/v9 v9.19.0
-	github.com/goravel/framework v1.14.7
+	github.com/dromara/carbon/v2 v2.5.0
 	github.com/gouniverse/sb v0.6.0
 	github.com/gouniverse/uid v1.5.0
 	github.com/samber/lo v1.47.0
@@ -13,9 +13,17 @@ require (
 )
 
 require (
+	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
+	github.com/jackc/pgservicefile v0.0.0-20221227161230-091c0ba34f0a // indirect
+	github.com/lib/pq v1.10.9 // indirect
+	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
+	github.com/stretchr/objx v0.5.2 // indirect
+	golang.org/x/crypto v0.24.0 // indirect
+)
+
+require (
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/georgysavva/scany v1.2.2 // indirect
-	github.com/golang-module/carbon/v2 v2.3.12 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gouniverse/base v0.0.5
 	github.com/gouniverse/maputils v0.7.0 // indirect
