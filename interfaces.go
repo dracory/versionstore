@@ -1,16 +1,18 @@
 package versionstore
 
+import "context"
+
 type StoreInterface interface {
 	AutoMigrate() error
 	EnableDebug(debug bool)
-	VersionCreate(version VersionInterface) error
-	VersionFindByID(versionID string) (VersionInterface, error)
-	VersionList(query VersionQueryInterface) ([]VersionInterface, error)
-	VersionUpdate(version VersionInterface) error
-	VersionDelete(version VersionInterface) error
-	VersionDeleteByID(versionID string) error
-	VersionSoftDelete(version VersionInterface) error
-	VersionSoftDeleteByID(versionID string) error
+	VersionCreate(context context.Context, version VersionInterface) error
+	VersionFindByID(context context.Context, versionID string) (VersionInterface, error)
+	VersionList(context context.Context, query VersionQueryInterface) ([]VersionInterface, error)
+	VersionUpdate(context context.Context, version VersionInterface) error
+	VersionDelete(context context.Context, version VersionInterface) error
+	VersionDeleteByID(context context.Context, versionID string) error
+	VersionSoftDelete(context context.Context, version VersionInterface) error
+	VersionSoftDeleteByID(context context.Context, versionID string) error
 }
 
 type VersionInterface interface {
