@@ -1,12 +1,14 @@
 package versionstore
 
 import (
+	"context"
 	"database/sql"
 	"os"
 	"strings"
 	"testing"
 
 	"github.com/dromara/carbon/v2"
+	"github.com/gouniverse/base/database"
 	_ "modernc.org/sqlite"
 )
 
@@ -44,7 +46,8 @@ func TestStoreVersionCreate(t *testing.T) {
 		SetEntityID("1").
 		SetContent("content1")
 
-	err = store.VersionCreate(version)
+	ctx := database.Context(context.Background(), db)
+	err = store.VersionCreate(ctx, version)
 
 	if err != nil {
 		t.Fatal("unexpected error:", err)
@@ -73,20 +76,22 @@ func TestStoreVersionDelete(t *testing.T) {
 		SetEntityID("1").
 		SetContent("content1")
 
-	err = store.VersionCreate(version)
+	ctx := database.Context(context.Background(), db)
+
+	err = store.VersionCreate(ctx, version)
 
 	if err != nil {
 		t.Fatal("unexpected error:", err)
 		return
 	}
 
-	err = store.VersionDelete(version)
+	err = store.VersionDelete(ctx, version)
 
 	if err != nil {
 		t.Fatal("unexpected error:", err)
 	}
 
-	versionFound, errFind := store.VersionFindByID(version.ID())
+	versionFound, errFind := store.VersionFindByID(ctx, version.ID())
 
 	if errFind != nil {
 		t.Fatal("unexpected error:", errFind)
@@ -120,21 +125,22 @@ func TestStoreVersionDeleteByID(t *testing.T) {
 		SetEntityType("webpage").
 		SetEntityID("1").
 		SetContent("content1")
+	ctx := database.Context(context.Background(), db)
 
-	err = store.VersionCreate(version)
+	err = store.VersionCreate(ctx, version)
 
 	if err != nil {
 		t.Fatal("unexpected error:", err)
 		return
 	}
 
-	err = store.VersionDeleteByID(version.ID())
+	err = store.VersionDeleteByID(ctx, version.ID())
 
 	if err != nil {
 		t.Fatal("unexpected error:", err)
 	}
 
-	versionFound, errFind := store.VersionFindByID(version.ID())
+	versionFound, errFind := store.VersionFindByID(ctx, version.ID())
 
 	if errFind != nil {
 		t.Fatal("unexpected error:", errFind)
@@ -169,14 +175,16 @@ func TestStoreVersionFindByID(t *testing.T) {
 		SetEntityID("1").
 		SetContent("content1")
 
-	err = store.VersionCreate(version)
+	ctx := database.Context(context.Background(), db)
+
+	err = store.VersionCreate(ctx, version)
 
 	if err != nil {
 		t.Fatal("unexpected error:", err)
 		return
 	}
 
-	versionFound, errFind := store.VersionFindByID(version.ID())
+	versionFound, errFind := store.VersionFindByID(ctx, version.ID())
 
 	if errFind != nil {
 		t.Fatal("unexpected error:", errFind)
@@ -235,19 +243,21 @@ func TestStoreVersionSoftDelete(t *testing.T) {
 		SetEntityID("1").
 		SetContent("content1")
 
-	err = store.VersionCreate(version)
+	ctx := database.Context(context.Background(), db)
+
+	err = store.VersionCreate(ctx, version)
 	if err != nil {
 		t.Fatal("unexpected error:", err)
 		return
 	}
 
-	err = store.VersionSoftDelete(version)
+	err = store.VersionSoftDelete(ctx, version)
 	if err != nil {
 		t.Fatal("unexpected error:", err)
 		return
 	}
 
-	versionFound, errFind := store.VersionFindByID(version.ID())
+	versionFound, errFind := store.VersionFindByID(ctx, version.ID())
 
 	if errFind != nil {
 		t.Fatal("unexpected error:", errFind)
@@ -259,7 +269,7 @@ func TestStoreVersionSoftDelete(t *testing.T) {
 		return
 	}
 
-	versionList, errList := store.VersionList(NewVersionQuery().
+	versionList, errList := store.VersionList(ctx, NewVersionQuery().
 		SetID(version.ID()).
 		SetSoftDeletedIncluded(true))
 
@@ -296,7 +306,9 @@ func TestStoreVersionUpdate(t *testing.T) {
 		SetEntityID("1").
 		SetContent("content1")
 
-	err = store.VersionCreate(version)
+	ctx := database.Context(context.Background(), db)
+
+	err = store.VersionCreate(ctx, version)
 	if err != nil {
 		t.Fatal("unexpected error:", err)
 		return
@@ -305,13 +317,13 @@ func TestStoreVersionUpdate(t *testing.T) {
 	now := carbon.Now(carbon.UTC).ToDateTimeString(carbon.UTC)
 	version.SetSoftDeletedAt(now)
 
-	err = store.VersionUpdate(version)
+	err = store.VersionUpdate(ctx, version)
 	if err != nil {
 		t.Fatal("unexpected error:", err)
 		return
 	}
 
-	versionList, errList := store.VersionList(NewVersionQuery().
+	versionList, errList := store.VersionList(ctx, NewVersionQuery().
 		SetID(version.ID()).
 		SetSoftDeletedIncluded(true))
 
