@@ -105,7 +105,7 @@ func (store *store) logSql(sqlStr string, sqlParams ...interface{}) {
 	}
 }
 
-func (store *store) VersionCount(context context.Context, options VersionQueryInterface) (int64, error) {
+func (store *store) VersionCount(ctx context.Context, options VersionQueryInterface) (int64, error) {
 	options.SetCountOnly(true)
 
 	q, _, err := store.versionQuery(options)
@@ -125,7 +125,7 @@ func (store *store) VersionCount(context context.Context, options VersionQueryIn
 
 	store.logSql(sqlStr, params...)
 
-	mapped, err := database.SelectToMapString(store.toQuerableContext(context), sqlStr, params...)
+	mapped, err := database.SelectToMapString(store.toQuerableContext(ctx), sqlStr, params...)
 
 	if err != nil {
 		return -1, err
@@ -147,7 +147,7 @@ func (store *store) VersionCount(context context.Context, options VersionQueryIn
 	return i, nil
 }
 
-func (store *store) VersionCreate(context context.Context, version VersionInterface) error {
+func (store *store) VersionCreate(ctx context.Context, version VersionInterface) error {
 	if version == nil {
 		return errors.New("version is nil")
 	}
@@ -181,7 +181,7 @@ func (store *store) VersionCreate(context context.Context, version VersionInterf
 
 	store.logSql(sqlStr, params...)
 
-	_, err := database.Execute(store.toQuerableContext(context), sqlStr, params...)
+	_, err := database.Execute(store.toQuerableContext(ctx), sqlStr, params...)
 
 	if err != nil {
 		return err
@@ -192,15 +192,15 @@ func (store *store) VersionCreate(context context.Context, version VersionInterf
 	return nil
 }
 
-func (store *store) VersionDelete(context context.Context, version VersionInterface) error {
+func (store *store) VersionDelete(ctx context.Context, version VersionInterface) error {
 	if version == nil {
 		return errors.New("version is nil")
 	}
 
-	return store.VersionDeleteByID(context, version.ID())
+	return store.VersionDeleteByID(ctx, version.ID())
 }
 
-func (store *store) VersionDeleteByID(context context.Context, id string) error {
+func (store *store) VersionDeleteByID(ctx context.Context, id string) error {
 	if id == "" {
 		return errors.New("version id is empty")
 	}
@@ -217,17 +217,17 @@ func (store *store) VersionDeleteByID(context context.Context, id string) error 
 
 	store.logSql(sqlStr, params...)
 
-	_, err := database.Execute(store.toQuerableContext(context), sqlStr, params...)
+	_, err := database.Execute(store.toQuerableContext(ctx), sqlStr, params...)
 
 	return err
 }
 
-func (store *store) VersionFindByID(context context.Context, id string) (VersionInterface, error) {
+func (store *store) VersionFindByID(ctx context.Context, id string) (VersionInterface, error) {
 	if id == "" {
 		return nil, errors.New("version id is empty")
 	}
 
-	list, err := store.VersionList(context, NewVersionQuery().SetID(id).SetLimit(1))
+	list, err := store.VersionList(ctx, NewVersionQuery().SetID(id).SetLimit(1))
 
 	if err != nil {
 		return nil, err
@@ -240,7 +240,7 @@ func (store *store) VersionFindByID(context context.Context, id string) (Version
 	return nil, nil
 }
 
-func (store *store) VersionList(context context.Context, options VersionQueryInterface) ([]VersionInterface, error) {
+func (store *store) VersionList(ctx context.Context, options VersionQueryInterface) ([]VersionInterface, error) {
 	q, columns, err := store.versionQuery(options)
 
 	if err != nil {
@@ -255,7 +255,7 @@ func (store *store) VersionList(context context.Context, options VersionQueryInt
 
 	store.logSql(sqlStr, sqlParams...)
 
-	modelMaps, err := database.SelectToMapString(store.toQuerableContext(context), sqlStr, sqlParams...)
+	modelMaps, err := database.SelectToMapString(store.toQuerableContext(ctx), sqlStr, sqlParams...)
 
 	if err != nil {
 		return []VersionInterface{}, err
@@ -271,31 +271,31 @@ func (store *store) VersionList(context context.Context, options VersionQueryInt
 	return list, nil
 }
 
-func (store *store) VersionSoftDelete(context context.Context, version VersionInterface) error {
+func (store *store) VersionSoftDelete(ctx context.Context, version VersionInterface) error {
 	if version == nil {
 		return errors.New("version is nil")
 	}
 
 	version.SetSoftDeletedAt(carbon.Now(carbon.UTC).ToDateTimeString(carbon.UTC))
 
-	return store.VersionUpdate(context, version)
+	return store.VersionUpdate(ctx, version)
 }
 
-func (store *store) VersionSoftDeleteByID(context context.Context, id string) error {
-	version, err := store.VersionFindByID(context, id)
+func (store *store) VersionSoftDeleteByID(ctx context.Context, id string) error {
+	version, err := store.VersionFindByID(ctx, id)
 
 	if err != nil {
 		return err
 	}
 
-	return store.VersionSoftDelete(context, version)
+	return store.VersionSoftDelete(ctx, version)
 }
 
 // VersionUpdate updates a version
 //
 // Note!! There is no reason to call this method other than marking
 // the version as soft deleted
-func (store *store) VersionUpdate(context context.Context, version VersionInterface) error {
+func (store *store) VersionUpdate(ctx context.Context, version VersionInterface) error {
 	if version == nil {
 		return errors.New("version is nil")
 	}
@@ -321,7 +321,7 @@ func (store *store) VersionUpdate(context context.Context, version VersionInterf
 
 	store.logSql(sqlStr, params...)
 
-	_, err := database.Execute(store.toQuerableContext(context), sqlStr, params...)
+	_, err := database.Execute(store.toQuerableContext(ctx), sqlStr, params...)
 
 	if err != nil {
 		return err
@@ -386,10 +386,10 @@ func (store *store) versionQuery(options VersionQueryInterface) (selectDataset *
 	return q.Where(softDeleted), columns, nil
 }
 
-func (store *store) toQuerableContext(context context.Context) database.QueryableContext {
-	if database.IsQueryableContext(context) {
-		return context.(database.QueryableContext)
+func (store *store) toQuerableContext(ctx context.Context) database.QueryableContext {
+	if database.IsQueryableContext(ctx) {
+		return ctx.(database.QueryableContext)
 	}
 
-	return database.Context(context, store.db)
+	return database.Context(ctx, store.db)
 }
