@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/dracory/database"
 	"github.com/dromara/carbon/v2"
-	"github.com/gouniverse/base/database"
 	_ "modernc.org/sqlite"
 )
 

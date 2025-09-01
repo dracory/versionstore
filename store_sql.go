@@ -1,6 +1,6 @@
 package versionstore
 
-import "github.com/gouniverse/sb"
+import "github.com/dracory/sb"
 
 // sqlCreateTable returns a SQL string for creating the setting table
 func (store *store) sqlTableCreate() string {
