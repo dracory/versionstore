@@ -1,8 +1,8 @@
-# versionstore <a href="https://gitpod.io/#https://github.com/gouniverse/versionstore" style="float:right:"><img src="https://gitpod.io/button/open-in-gitpod.svg" alt="Open in Gitpod" loading="lazy"></a>
+# versionstore <a href="https://gitpod.io/#https://github.com/dracory/versionstore" style="float:right:"><img src="https://gitpod.io/button/open-in-gitpod.svg" alt="Open in Gitpod" loading="lazy"></a>
 
-[![Tests Status](https://github.com/gouniverse/versionstore/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/gouniverse/versionstore/actions/workflows/tests.yml)
-[![Go Report Card](https://goreportcard.com/badge/github.com/gouniverse/versionstore)](https://goreportcard.com/report/github.com/gouniverse/versionstore)
-[![PkgGoDev](https://pkg.go.dev/badge/github.com/gouniverse/versionstore)](https://pkg.go.dev/github.com/gouniverse/versionstore)
+[![Tests Status](https://github.com/dracory/versionstore/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/dracory/versionstore/actions/workflows/tests.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/dracory/versionstore)](https://goreportcard.com/report/github.com/dracory/versionstore)
+[![PkgGoDev](https://pkg.go.dev/badge/github.com/dracory/versionstore)](https://pkg.go.dev/github.com/dracory/versionstore)
 
 ## License
 

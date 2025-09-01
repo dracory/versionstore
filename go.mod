@@ -1,4 +1,4 @@
-module github.com/gouniverse/versionstore
+module github.com/dracory/versionstore
 
 go 1.23.3
 
