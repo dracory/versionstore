@@ -83,10 +83,12 @@ var _ StoreInterface = (*store)(nil)
 
 // AutoMigrate auto migrate
 func (store *store) AutoMigrate() error {
-	sqlStr := store.sqlTableCreate()
+	sqlStr, err := store.sqlTableCreate()
+	if err != nil {
+		return err
+	}
 
-	_, err := store.db.Exec(sqlStr)
-
+	_, err = store.db.Exec(sqlStr)
 	if err != nil {
 		return err
 	}
