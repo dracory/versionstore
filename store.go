@@ -101,12 +101,14 @@ func (store *store) EnableDebug(debug bool) {
 	store.debugEnabled = debug
 }
 
+// logSql logs the SQL query and parameters if debug is enabled
 func (store *store) logSql(sqlStr string, sqlParams ...interface{}) {
 	if store.debugEnabled {
 		log.Println(sqlStr, sqlParams)
 	}
 }
 
+// VersionCount returns the count of versions matching the query options
 func (store *store) VersionCount(ctx context.Context, options VersionQueryInterface) (int64, error) {
 	options.SetCountOnly(true)
 
@@ -149,6 +151,7 @@ func (store *store) VersionCount(ctx context.Context, options VersionQueryInterf
 	return i, nil
 }
 
+// VersionCreate creates a new version
 func (store *store) VersionCreate(ctx context.Context, version VersionInterface) error {
 	if version == nil {
 		return errors.New("version is nil")
@@ -194,6 +197,7 @@ func (store *store) VersionCreate(ctx context.Context, version VersionInterface)
 	return nil
 }
 
+// VersionDelete deletes a version permanently
 func (store *store) VersionDelete(ctx context.Context, version VersionInterface) error {
 	if version == nil {
 		return errors.New("version is nil")
@@ -202,6 +206,7 @@ func (store *store) VersionDelete(ctx context.Context, version VersionInterface)
 	return store.VersionDeleteByID(ctx, version.ID())
 }
 
+// VersionDeleteByID deletes a version by ID permanently
 func (store *store) VersionDeleteByID(ctx context.Context, id string) error {
 	if id == "" {
 		return errors.New("version id is empty")
@@ -224,6 +229,7 @@ func (store *store) VersionDeleteByID(ctx context.Context, id string) error {
 	return err
 }
 
+// VersionFindByID finds a version by ID
 func (store *store) VersionFindByID(ctx context.Context, id string) (VersionInterface, error) {
 	if id == "" {
 		return nil, errors.New("version id is empty")
@@ -242,6 +248,7 @@ func (store *store) VersionFindByID(ctx context.Context, id string) (VersionInte
 	return nil, nil
 }
 
+// VersionList returns a list of versions matching the query options
 func (store *store) VersionList(ctx context.Context, options VersionQueryInterface) ([]VersionInterface, error) {
 	q, columns, err := store.versionQuery(options)
 
@@ -273,6 +280,7 @@ func (store *store) VersionList(ctx context.Context, options VersionQueryInterfa
 	return list, nil
 }
 
+// VersionSoftDelete soft deletes a version
 func (store *store) VersionSoftDelete(ctx context.Context, version VersionInterface) error {
 	if version == nil {
 		return errors.New("version is nil")
@@ -283,6 +291,7 @@ func (store *store) VersionSoftDelete(ctx context.Context, version VersionInterf
 	return store.VersionUpdate(ctx, version)
 }
 
+// VersionSoftDeleteByID soft deletes a version by ID
 func (store *store) VersionSoftDeleteByID(ctx context.Context, id string) error {
 	version, err := store.VersionFindByID(ctx, id)
 
@@ -334,6 +343,7 @@ func (store *store) VersionUpdate(ctx context.Context, version VersionInterface)
 	return err
 }
 
+// versionQuery builds a goqu query from the provided options
 func (store *store) versionQuery(options VersionQueryInterface) (selectDataset *goqu.SelectDataset, columns []any, err error) {
 	if options == nil {
 		return nil, nil, errors.New("options is nil")
@@ -388,6 +398,7 @@ func (store *store) versionQuery(options VersionQueryInterface) (selectDataset *
 	return q.Where(softDeleted), columns, nil
 }
 
+// toQuerableContext converts a context to a QueryableContext
 func (store *store) toQuerableContext(ctx context.Context) database.QueryableContext {
 	if database.IsQueryableContext(ctx) {
 		return ctx.(database.QueryableContext)
