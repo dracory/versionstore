@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/dracory/database"
 	"github.com/dromara/carbon/v2"
@@ -337,5 +338,150 @@ func TestStoreVersionUpdate(t *testing.T) {
 
 	if !strings.Contains(versionList[0].SoftDeletedAt(), now) {
 		t.Fatal("Version soft deleted at MUST be equal. Expected: ", now, " Found: ", versionList[0].SoftDeletedAt())
+	}
+}
+
+func TestStoreVersionSoftDeleteByID(t *testing.T) {
+	db := initDB(":memory:")
+
+	store, err := NewStore(NewStoreOptions{
+		DB:                 db,
+		TableName:          "version_soft_delete_by_id",
+		AutomigrateEnabled: true,
+	})
+
+	if err != nil {
+		t.Fatal("unexpected error:", err)
+	}
+
+	if store == nil {
+		t.Fatal("unexpected nil store")
+	}
+
+	version := NewVersion().
+		SetEntityType("webpage").
+		SetEntityID("1").
+		SetContent("content1")
+
+	ctx := database.Context(context.Background(), db)
+
+	err = store.VersionCreate(ctx, version)
+	if err != nil {
+		t.Fatal("unexpected error:", err)
+		return
+	}
+
+	err = store.VersionSoftDeleteByID(ctx, version.ID())
+	if err != nil {
+		t.Fatal("unexpected error:", err)
+		return
+	}
+
+	// After soft delete, VersionFindByID should NOT find the record (soft deleted excluded by default)
+	versionFound, errFind := store.VersionFindByID(ctx, version.ID())
+
+	if errFind != nil {
+		t.Fatal("unexpected error:", errFind)
+		return
+	}
+
+	if versionFound != nil {
+		t.Fatal("Version MUST be nil after soft delete (FindByID excludes soft deleted)")
+		return
+	}
+
+	// But the record should still exist if we include soft deleted
+	versionList, errList := store.VersionList(ctx, NewVersionQuery().
+		SetID(version.ID()).
+		SetSoftDeletedIncluded(true))
+
+	if errList != nil {
+		t.Fatal("unexpected error:", errList)
+		return
+	}
+
+	if len(versionList) != 1 {
+		t.Fatal("Version list MUST be 1, got:", len(versionList))
+		return
+	}
+
+	if versionList[0].SoftDeletedAt() == "" {
+		t.Fatal("Version SoftDeletedAt MUST NOT be empty after soft delete by ID")
+	}
+}
+
+func TestStoreVersionList_Ordering(t *testing.T) {
+	db := initDB(":memory:")
+
+	store, err := NewStore(NewStoreOptions{
+		DB:                 db,
+		TableName:          "version_list_ordering",
+		AutomigrateEnabled: true,
+		DebugEnabled:       true,
+	})
+
+	if err != nil {
+		t.Fatal("unexpected error:", err)
+	}
+
+	if store == nil {
+		t.Fatal("unexpected nil store")
+	}
+
+	ctx := database.Context(context.Background(), db)
+	entityID := "entity-123"
+	entityType := "webpage"
+
+	// Create first version
+	version1 := NewVersion().
+		SetEntityType(entityType).
+		SetEntityID(entityID).
+		SetContent("content1")
+
+	err = store.VersionCreate(ctx, version1)
+	if err != nil {
+		t.Fatal("unexpected error:", err)
+		return
+	}
+
+	// Delay to ensure different timestamps (SQLite datetime has second precision)
+	time.Sleep(1 * time.Second)
+
+	// Create second version
+	version2 := NewVersion().
+		SetEntityType(entityType).
+		SetEntityID(entityID).
+		SetContent("content2")
+
+	err = store.VersionCreate(ctx, version2)
+	if err != nil {
+		t.Fatal("unexpected error:", err)
+		return
+	}
+
+	// List with DESC order - should return newest first
+	versionList, errList := store.VersionList(ctx, NewVersionQuery().
+		SetEntityType(entityType).
+		SetEntityID(entityID).
+		SetOrderBy(COLUMN_CREATED_AT).
+		SetSortOrder("desc"))
+
+	if errList != nil {
+		t.Fatal("unexpected error:", errList)
+		return
+	}
+
+	if len(versionList) != 2 {
+		t.Fatal("Version list MUST be 2, got:", len(versionList))
+		return
+	}
+
+	// DESC order should return content2 first (newest)
+	if versionList[0].Content() != "content2" {
+		t.Fatal("First version MUST be 'content2' (newest) with DESC order. Got:", versionList[0].Content())
+	}
+
+	if versionList[1].Content() != "content1" {
+		t.Fatal("Second version MUST be 'content1' (oldest) with DESC order. Got:", versionList[1].Content())
 	}
 }
