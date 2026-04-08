@@ -3,7 +3,7 @@ package versionstore
 import "github.com/dracory/sb"
 
 // sqlCreateTable returns a SQL string for creating the setting table
-func (store *store) sqlTableCreate() (string, error) {
+func (store *storeImplementation) sqlTableCreate() (string, error) {
 	sql, err := sb.NewBuilder(sb.DatabaseDriverName(store.db)).
 		Table(store.tableName).
 		Column(sb.Column{
