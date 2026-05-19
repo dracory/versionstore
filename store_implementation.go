@@ -57,7 +57,7 @@ func NewStore(opts NewStoreOptions) (StoreInterface, error) {
 	store.logger = opts.Logger
 
 	if store.automigrateEnabled {
-		err := store.MigrateUp()
+		err := store.MigrateUp(context.Background())
 
 		if err != nil {
 			return nil, err
@@ -83,11 +83,11 @@ var _ StoreInterface = (*storeImplementation)(nil)
 
 // AutoMigrate auto migrate (deprecated - use MigrateUp)
 func (store *storeImplementation) AutoMigrate() error {
-	return store.MigrateUp()
+	return store.MigrateUp(context.Background())
 }
 
 // MigrateUp creates the table
-func (store *storeImplementation) MigrateUp(tx ...*sql.Tx) error {
+func (store *storeImplementation) MigrateUp(ctx context.Context, tx ...*sql.Tx) error {
 	var txToUse *sql.Tx
 	if len(tx) > 0 {
 		txToUse = tx[0]
@@ -100,9 +100,9 @@ func (store *storeImplementation) MigrateUp(tx ...*sql.Tx) error {
 
 	var errExec error
 	if txToUse != nil {
-		_, errExec = txToUse.Exec(sqlStr)
+		_, errExec = txToUse.ExecContext(ctx, sqlStr)
 	} else {
-		_, errExec = store.db.Exec(sqlStr)
+		_, errExec = store.db.ExecContext(ctx, sqlStr)
 	}
 
 	if errExec != nil {
@@ -113,7 +113,7 @@ func (store *storeImplementation) MigrateUp(tx ...*sql.Tx) error {
 }
 
 // MigrateDown drops the table
-func (store *storeImplementation) MigrateDown(tx ...*sql.Tx) error {
+func (store *storeImplementation) MigrateDown(ctx context.Context, tx ...*sql.Tx) error {
 	var txToUse *sql.Tx
 	if len(tx) > 0 {
 		txToUse = tx[0]
@@ -126,9 +126,9 @@ func (store *storeImplementation) MigrateDown(tx ...*sql.Tx) error {
 
 	var errExec error
 	if txToUse != nil {
-		_, errExec = txToUse.Exec(sqlStr)
+		_, errExec = txToUse.ExecContext(ctx, sqlStr)
 	} else {
-		_, errExec = store.db.Exec(sqlStr)
+		_, errExec = store.db.ExecContext(ctx, sqlStr)
 	}
 
 	if errExec != nil {
