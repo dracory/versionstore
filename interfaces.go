@@ -1,9 +1,21 @@
 package versionstore
 
-import "context"
+import (
+	"context"
+	"database/sql"
+)
 
 type StoreInterface interface {
-	AutoMigrate() error
+	// GetTableName returns the table name
+	GetTableName() string
+	// SetTableName sets the table name
+	SetTableName(tableName string)
+
+	// MigrateDown drops the table
+	MigrateDown(tx ...*sql.Tx) error
+	// MigrateUp creates the table
+	MigrateUp(tx ...*sql.Tx) error
+
 	EnableDebug(debug bool)
 	VersionCreate(context context.Context, version VersionInterface) error
 	VersionFindByID(context context.Context, versionID string) (VersionInterface, error)

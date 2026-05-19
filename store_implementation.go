@@ -57,7 +57,7 @@ func NewStore(opts NewStoreOptions) (StoreInterface, error) {
 	store.logger = opts.Logger
 
 	if store.automigrateEnabled {
-		err := store.AutoMigrate()
+		err := store.MigrateUp()
 
 		if err != nil {
 			return nil, err
@@ -81,16 +81,58 @@ type storeImplementation struct {
 
 var _ StoreInterface = (*storeImplementation)(nil)
 
-// AutoMigrate auto migrate
+// AutoMigrate auto migrate (deprecated - use MigrateUp)
 func (store *storeImplementation) AutoMigrate() error {
+	return store.MigrateUp()
+}
+
+// MigrateUp creates the table
+func (store *storeImplementation) MigrateUp(tx ...*sql.Tx) error {
+	var txToUse *sql.Tx
+	if len(tx) > 0 {
+		txToUse = tx[0]
+	}
+
 	sqlStr, err := store.sqlTableCreate()
 	if err != nil {
 		return err
 	}
 
-	_, err = store.db.Exec(sqlStr)
+	var errExec error
+	if txToUse != nil {
+		_, errExec = txToUse.Exec(sqlStr)
+	} else {
+		_, errExec = store.db.Exec(sqlStr)
+	}
+
+	if errExec != nil {
+		return errExec
+	}
+
+	return nil
+}
+
+// MigrateDown drops the table
+func (store *storeImplementation) MigrateDown(tx ...*sql.Tx) error {
+	var txToUse *sql.Tx
+	if len(tx) > 0 {
+		txToUse = tx[0]
+	}
+
+	sqlStr, err := store.sqlTableDrop()
 	if err != nil {
 		return err
+	}
+
+	var errExec error
+	if txToUse != nil {
+		_, errExec = txToUse.Exec(sqlStr)
+	} else {
+		_, errExec = store.db.Exec(sqlStr)
+	}
+
+	if errExec != nil {
+		return errExec
 	}
 
 	return nil
@@ -99,6 +141,16 @@ func (store *storeImplementation) AutoMigrate() error {
 // EnableDebug - enables the debug option
 func (store *storeImplementation) EnableDebug(debug bool) {
 	store.debugEnabled = debug
+}
+
+// GetTableName returns the table name
+func (store *storeImplementation) GetTableName() string {
+	return store.tableName
+}
+
+// SetTableName sets the table name
+func (store *storeImplementation) SetTableName(tableName string) {
+	store.tableName = tableName
 }
 
 // logSql logs the SQL query and parameters if debug is enabled

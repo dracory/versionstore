@@ -38,3 +38,10 @@ func (store *storeImplementation) sqlTableCreate() (string, error) {
 
 	return sql, err
 }
+
+// sqlTableDrop returns a SQL string for dropping the table
+func (store *storeImplementation) sqlTableDrop() (string, error) {
+	return sb.NewBuilder(sb.DatabaseDriverName(store.db)).
+		Table(store.tableName).
+		Drop()
+}
