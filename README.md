@@ -1,4 +1,4 @@
-# versionstore <a href="https://gitpod.io/#https://github.com/dracory/versionstore" style="float:right:"><img src="https://gitpod.io/button/open-in-gitpod.svg" alt="Open in Gitpod" loading="lazy"></a>
+# versionstore
 
 [![Tests Status](https://github.com/dracory/versionstore/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/dracory/versionstore/actions/workflows/tests.yml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/dracory/versionstore)](https://goreportcard.com/report/github.com/dracory/versionstore)
