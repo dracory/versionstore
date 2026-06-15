@@ -1,8 +1,11 @@
 package versionstore
 
 import (
-	"github.com/dracory/sb"
-	"github.com/dracory/uid"
+	"time"
+
+	"github.com/dracory/neat/database/orm"
+	"github.com/dracory/neat/database/soft_delete"
+	neatuid "github.com/dracory/neat/support/uid"
 	"github.com/dromara/carbon/v2"
 )
 
@@ -10,128 +13,137 @@ import (
 
 // NewVersion creates a new version with a generated ID and current timestamp
 func NewVersion() VersionInterface {
-	return &version{
-		id:            uid.NanoUid(),
-		createdAt:     carbon.Now(carbon.UTC).ToDateTimeString(carbon.UTC),
-		softDeletedAt: sb.MAX_DATETIME,
-	}
+	o := &version{}
+	o.SetID(neatuid.GenerateShortID())
+	o.SetCreatedAt(carbon.Now(carbon.UTC).ToDateTimeString(carbon.UTC))
+	o.SetSoftDeletedAt(MAX_DATETIME)
+	return o
 }
 
 // NewVersionFromExistingData creates a version from existing data
 func NewVersionFromExistingData(data map[string]string) VersionInterface {
-	return &version{
-		id:            data[COLUMN_ID],
-		entityType:    data[COLUMN_ENTITY_TYPE],
-		entityID:      data[COLUMN_ENTITY_ID],
-		content:       data[COLUMN_CONTENT],
-		createdAt:     data[COLUMN_CREATED_AT],
-		softDeletedAt: data[COLUMN_SOFT_DELETED_AT],
+	o := &version{}
+	o.SetID(data[COLUMN_ID])
+	o.SetEntityType(data[COLUMN_ENTITY_TYPE])
+	o.SetEntityID(data[COLUMN_ENTITY_ID])
+	o.SetContent(data[COLUMN_CONTENT])
+	if v, ok := data[COLUMN_CREATED_AT]; ok {
+		o.SetCreatedAt(v)
 	}
+	if v, ok := data[COLUMN_SOFT_DELETED_AT]; ok {
+		o.SetSoftDeletedAt(v)
+	}
+	return o
 }
 
 // == CLASS ==================================================================
 
-type version struct {
-	id            string
-	entityType    string
-	entityID      string
-	content       string
-	createdAt     string
-	softDeletedAt string
-}
-
 var _ VersionInterface = (*version)(nil)
 
-// Data returns all version data as a map
-func (v *version) Data() map[string]string {
-	return map[string]string{
-		COLUMN_ID:              v.id,
-		COLUMN_ENTITY_TYPE:     v.entityType,
-		COLUMN_ENTITY_ID:       v.entityID,
-		COLUMN_CONTENT:         v.content,
-		COLUMN_CREATED_AT:      v.createdAt,
-		COLUMN_SOFT_DELETED_AT: v.softDeletedAt,
+type version struct {
+	orm.ShortID
+
+	EntityTypeField string `db:"entity_type"`
+	EntityIDField   string `db:"entity_id"`
+	ContentField    string `db:"content"`
+
+	CreatedAtField orm.CreatedAt
+	soft_delete.SoftDeletesMaxDate
+}
+
+// == METHODS =================================================================
+
+// IsSoftDeleted returns true if the version is soft deleted.
+func (o *version) IsSoftDeleted() bool {
+	return o.SoftDeletedAt.Before(time.Now().UTC())
+}
+
+// == SETTERS AND GETTERS =====================================================
+
+// ID returns the id of the version.
+func (o *version) ID() string {
+	return o.ShortID.ID
+}
+
+// SetID sets the id of the version.
+func (o *version) SetID(id string) VersionInterface {
+	o.ShortID.ID = id
+	return o
+}
+
+// EntityType returns the entity type of the version.
+func (o *version) EntityType() string {
+	return o.EntityTypeField
+}
+
+// SetEntityType sets the entity type of the version.
+func (o *version) SetEntityType(entityType string) VersionInterface {
+	o.EntityTypeField = entityType
+	return o
+}
+
+// EntityID returns the entity id of the version.
+func (o *version) EntityID() string {
+	return o.EntityIDField
+}
+
+// SetEntityID sets the entity id of the version.
+func (o *version) SetEntityID(entityID string) VersionInterface {
+	o.EntityIDField = entityID
+	return o
+}
+
+// Content returns the content of the version.
+func (o *version) Content() string {
+	return o.ContentField
+}
+
+// SetContent sets the content of the version.
+func (o *version) SetContent(content string) VersionInterface {
+	o.ContentField = content
+	return o
+}
+
+// GetCreatedAt returns the created at time of the version.
+func (o *version) GetCreatedAt() string {
+	if o.CreatedAtField.CreatedAt.IsZero() {
+		return ""
 	}
+	return carbon.CreateFromStdTime(o.CreatedAtField.CreatedAt).ToDateTimeString()
 }
 
-// DataChanged returns the data that has changed
-//
-// This entity does not have many fields that can be changed
-// only the soft deleted field can be changed, the other fields
-// should not be changed really
-func (v *version) DataChanged() map[string]string {
-	return map[string]string{
-		COLUMN_SOFT_DELETED_AT: v.softDeletedAt,
+// GetCreatedAtCarbon returns the created at time of the version as a carbon object.
+func (o *version) GetCreatedAtCarbon() *carbon.Carbon {
+	return carbon.CreateFromStdTime(o.CreatedAtField.CreatedAt)
+}
+
+// SetCreatedAt sets the created at time of the version.
+func (o *version) SetCreatedAt(createdAt string) VersionInterface {
+	if createdAt == "" {
+		return o
 	}
+	o.CreatedAtField.CreatedAt = carbon.Parse(createdAt, carbon.UTC).StdTime()
+	return o
 }
 
-// MarkAsNotDirty marks the version as not dirty (no-op for this entity)
-func (v *version) MarkAsNotDirty() {
-	// there is nothing to do here
+// GetSoftDeletedAt returns the soft deleted at time of the version.
+func (o *version) GetSoftDeletedAt() string {
+	if o.SoftDeletedAt.IsZero() {
+		return ""
+	}
+	return carbon.CreateFromStdTime(o.SoftDeletedAt).ToDateTimeString()
 }
 
-// Content returns the version content
-func (v *version) Content() string {
-	return v.content
+// GetSoftDeletedAtCarbon returns the soft deleted at time of the version as a carbon object.
+func (o *version) GetSoftDeletedAtCarbon() *carbon.Carbon {
+	return carbon.CreateFromStdTime(o.SoftDeletedAt)
 }
 
-// SetContent sets the version content
-func (v *version) SetContent(content string) VersionInterface {
-	v.content = content
-	return v
-}
-
-// CreatedAt returns the creation timestamp
-func (v *version) CreatedAt() string {
-	return v.createdAt
-}
-
-// SetCreatedAt sets the creation timestamp
-func (v *version) SetCreatedAt(createdAt string) VersionInterface {
-	v.createdAt = createdAt
-	return v
-}
-
-// EntityType returns the entity type
-func (v *version) EntityType() string {
-	return v.entityType
-}
-
-// SetEntityType sets the entity type
-func (v *version) SetEntityType(entityType string) VersionInterface {
-	v.entityType = entityType
-	return v
-}
-
-// EntityID returns the entity ID
-func (v *version) EntityID() string {
-	return v.entityID
-}
-
-// SetEntityID sets the entity ID
-func (v *version) SetEntityID(entityID string) VersionInterface {
-	v.entityID = entityID
-	return v
-}
-
-// ID returns the version ID
-func (v *version) ID() string {
-	return v.id
-}
-
-// SetID sets the version ID
-func (v *version) SetID(id string) VersionInterface {
-	v.id = id
-	return v
-}
-
-// SoftDeletedAt returns the soft deletion timestamp
-func (v *version) SoftDeletedAt() string {
-	return v.softDeletedAt
-}
-
-// SetSoftDeletedAt sets the soft deletion timestamp
-func (v *version) SetSoftDeletedAt(softDeletedAt string) VersionInterface {
-	v.softDeletedAt = softDeletedAt
-	return v
+// SetSoftDeletedAt sets the soft deleted at time of the version.
+func (o *version) SetSoftDeletedAt(softDeletedAt string) VersionInterface {
+	if softDeletedAt == "" {
+		return o
+	}
+	o.SoftDeletedAt = carbon.Parse(softDeletedAt, carbon.UTC).StdTime()
+	return o
 }

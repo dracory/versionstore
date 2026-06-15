@@ -1,10 +1,6 @@
 package versionstore
 
-import (
-	"testing"
-
-	"github.com/dracory/sb"
-)
+import "testing"
 
 func TestNewVersion(t *testing.T) {
 	version := NewVersion()
@@ -17,12 +13,12 @@ func TestNewVersion(t *testing.T) {
 		t.Error("NewVersion() should generate an ID")
 	}
 
-	if version.CreatedAt() == "" {
+	if version.GetCreatedAt() == "" {
 		t.Error("NewVersion() should set CreatedAt")
 	}
 
-	if version.SoftDeletedAt() != sb.MAX_DATETIME {
-		t.Errorf("NewVersion() SoftDeletedAt should be %s, got %s", sb.MAX_DATETIME, version.SoftDeletedAt())
+	if version.GetSoftDeletedAt() != MAX_DATETIME {
+		t.Errorf("NewVersion() SoftDeletedAt should be %s, got %s", MAX_DATETIME, version.GetSoftDeletedAt())
 	}
 }
 
@@ -33,7 +29,7 @@ func TestNewVersionFromExistingData(t *testing.T) {
 		COLUMN_ENTITY_ID:       "test-entity-id",
 		COLUMN_CONTENT:         "test-content",
 		COLUMN_CREATED_AT:      "2024-01-01 00:00:00",
-		COLUMN_SOFT_DELETED_AT: sb.MAX_DATETIME,
+		COLUMN_SOFT_DELETED_AT: MAX_DATETIME,
 	}
 
 	version := NewVersionFromExistingData(data)
@@ -58,73 +54,13 @@ func TestNewVersionFromExistingData(t *testing.T) {
 		t.Errorf("Content() = %s, want %s", version.Content(), "test-content")
 	}
 
-	if version.CreatedAt() != "2024-01-01 00:00:00" {
-		t.Errorf("CreatedAt() = %s, want %s", version.CreatedAt(), "2024-01-01 00:00:00")
+	if version.GetCreatedAt() != "2024-01-01 00:00:00" {
+		t.Errorf("CreatedAt() = %s, want %s", version.GetCreatedAt(), "2024-01-01 00:00:00")
 	}
 
-	if version.SoftDeletedAt() != sb.MAX_DATETIME {
-		t.Errorf("SoftDeletedAt() = %s, want %s", version.SoftDeletedAt(), sb.MAX_DATETIME)
+	if version.GetSoftDeletedAt() != MAX_DATETIME {
+		t.Errorf("SoftDeletedAt() = %s, want %s", version.GetSoftDeletedAt(), MAX_DATETIME)
 	}
-}
-
-func TestVersionData(t *testing.T) {
-	data := map[string]string{
-		COLUMN_ID:              "test-id",
-		COLUMN_ENTITY_TYPE:     "test-entity-type",
-		COLUMN_ENTITY_ID:       "test-entity-id",
-		COLUMN_CONTENT:         "test-content",
-		COLUMN_CREATED_AT:      "2024-01-01 00:00:00",
-		COLUMN_SOFT_DELETED_AT: sb.MAX_DATETIME,
-	}
-
-	version := NewVersionFromExistingData(data)
-	result := version.Data()
-
-	if result[COLUMN_ID] != "test-id" {
-		t.Errorf("Data()[ID] = %s, want %s", result[COLUMN_ID], "test-id")
-	}
-
-	if result[COLUMN_ENTITY_TYPE] != "test-entity-type" {
-		t.Errorf("Data()[EntityType] = %s, want %s", result[COLUMN_ENTITY_TYPE], "test-entity-type")
-	}
-
-	if result[COLUMN_ENTITY_ID] != "test-entity-id" {
-		t.Errorf("Data()[EntityID] = %s, want %s", result[COLUMN_ENTITY_ID], "test-entity-id")
-	}
-
-	if result[COLUMN_CONTENT] != "test-content" {
-		t.Errorf("Data()[Content] = %s, want %s", result[COLUMN_CONTENT], "test-content")
-	}
-
-	if result[COLUMN_CREATED_AT] != "2024-01-01 00:00:00" {
-		t.Errorf("Data()[CreatedAt] = %s, want %s", result[COLUMN_CREATED_AT], "2024-01-01 00:00:00")
-	}
-
-	if result[COLUMN_SOFT_DELETED_AT] != sb.MAX_DATETIME {
-		t.Errorf("Data()[SoftDeletedAt] = %s, want %s", result[COLUMN_SOFT_DELETED_AT], sb.MAX_DATETIME)
-	}
-}
-
-func TestVersionDataChanged(t *testing.T) {
-	version := NewVersion().
-		SetSoftDeletedAt("2024-12-31 23:59:59")
-
-	dataChanged := version.DataChanged()
-
-	if dataChanged[COLUMN_SOFT_DELETED_AT] != "2024-12-31 23:59:59" {
-		t.Errorf("DataChanged()[SoftDeletedAt] = %s, want %s", dataChanged[COLUMN_SOFT_DELETED_AT], "2024-12-31 23:59:59")
-	}
-
-	if len(dataChanged) != 1 {
-		t.Errorf("DataChanged() should return 1 field, got %d", len(dataChanged))
-	}
-}
-
-func TestVersionMarkAsNotDirty(t *testing.T) {
-	version := NewVersion()
-
-	// Should not panic or error
-	version.MarkAsNotDirty()
 }
 
 func TestVersionContent(t *testing.T) {
@@ -148,7 +84,7 @@ func TestVersionContent(t *testing.T) {
 func TestVersionCreatedAt(t *testing.T) {
 	version := NewVersion()
 
-	initialCreatedAt := version.CreatedAt()
+	initialCreatedAt := version.GetCreatedAt()
 	if initialCreatedAt == "" {
 		t.Error("CreatedAt() should be set by NewVersion()")
 	}
@@ -159,8 +95,8 @@ func TestVersionCreatedAt(t *testing.T) {
 		t.Error("SetCreatedAt() should return the same instance for chaining")
 	}
 
-	if version.CreatedAt() != "2024-06-15 12:30:45" {
-		t.Errorf("CreatedAt() = %s, want %s", version.CreatedAt(), "2024-06-15 12:30:45")
+	if version.GetCreatedAt() != "2024-06-15 12:30:45" {
+		t.Errorf("CreatedAt() = %s, want %s", version.GetCreatedAt(), "2024-06-15 12:30:45")
 	}
 }
 
@@ -222,8 +158,8 @@ func TestVersionID(t *testing.T) {
 func TestVersionSoftDeletedAt(t *testing.T) {
 	version := NewVersion()
 
-	if version.SoftDeletedAt() != sb.MAX_DATETIME {
-		t.Errorf("SoftDeletedAt() should be MAX_DATETIME initially, got %s", version.SoftDeletedAt())
+	if version.GetSoftDeletedAt() != MAX_DATETIME {
+		t.Errorf("SoftDeletedAt() should be MAX_DATETIME initially, got %s", version.GetSoftDeletedAt())
 	}
 
 	result := version.SetSoftDeletedAt("2024-12-31 23:59:59")
@@ -232,8 +168,8 @@ func TestVersionSoftDeletedAt(t *testing.T) {
 		t.Error("SetSoftDeletedAt() should return the same instance for chaining")
 	}
 
-	if version.SoftDeletedAt() != "2024-12-31 23:59:59" {
-		t.Errorf("SoftDeletedAt() = %s, want %s", version.SoftDeletedAt(), "2024-12-31 23:59:59")
+	if version.GetSoftDeletedAt() != "2024-12-31 23:59:59" {
+		t.Errorf("SoftDeletedAt() = %s, want %s", version.GetSoftDeletedAt(), "2024-12-31 23:59:59")
 	}
 }
 
@@ -262,11 +198,11 @@ func TestVersionMethodChaining(t *testing.T) {
 		t.Errorf("Method chaining failed for Content, got %s", version.Content())
 	}
 
-	if version.CreatedAt() != "2024-01-01 00:00:00" {
-		t.Errorf("Method chaining failed for CreatedAt, got %s", version.CreatedAt())
+	if version.GetCreatedAt() != "2024-01-01 00:00:00" {
+		t.Errorf("Method chaining failed for CreatedAt, got %s", version.GetCreatedAt())
 	}
 
-	if version.SoftDeletedAt() != "2024-12-31 23:59:59" {
-		t.Errorf("Method chaining failed for SoftDeletedAt, got %s", version.SoftDeletedAt())
+	if version.GetSoftDeletedAt() != "2024-12-31 23:59:59" {
+		t.Errorf("Method chaining failed for SoftDeletedAt, got %s", version.GetSoftDeletedAt())
 	}
 }

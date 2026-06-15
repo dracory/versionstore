@@ -3,6 +3,8 @@ package versionstore
 import (
 	"context"
 	"database/sql"
+
+	"github.com/dromara/carbon/v2"
 )
 
 type StoreInterface interface {
@@ -17,32 +19,37 @@ type StoreInterface interface {
 	MigrateUp(ctx context.Context, tx ...*sql.Tx) error
 
 	EnableDebug(debug bool)
-	VersionCreate(context context.Context, version VersionInterface) error
-	VersionFindByID(context context.Context, versionID string) (VersionInterface, error)
-	VersionList(context context.Context, query VersionQueryInterface) ([]VersionInterface, error)
-	VersionUpdate(context context.Context, version VersionInterface) error
-	VersionDelete(context context.Context, version VersionInterface) error
-	VersionDeleteByID(context context.Context, versionID string) error
-	VersionSoftDelete(context context.Context, version VersionInterface) error
-	VersionSoftDeleteByID(context context.Context, versionID string) error
+	VersionCreate(ctx context.Context, version VersionInterface) error
+	VersionFindByID(ctx context.Context, versionID string) (VersionInterface, error)
+	VersionList(ctx context.Context, query VersionQueryInterface) ([]VersionInterface, error)
+	VersionUpdate(ctx context.Context, version VersionInterface) error
+	VersionDelete(ctx context.Context, version VersionInterface) error
+	VersionDeleteByID(ctx context.Context, versionID string) error
+	VersionSoftDelete(ctx context.Context, version VersionInterface) error
+	VersionSoftDeleteByID(ctx context.Context, versionID string) error
 }
 
 type VersionInterface interface {
-	Data() map[string]string
-	DataChanged() map[string]string
-	MarkAsNotDirty()
+	IsSoftDeleted() bool
 
 	ID() string
 	SetID(id string) VersionInterface
+
 	EntityType() string
 	SetEntityType(entityType string) VersionInterface
+
 	EntityID() string
 	SetEntityID(entityID string) VersionInterface
+
 	Content() string
 	SetContent(content string) VersionInterface
-	CreatedAt() string
+
+	GetCreatedAt() string
+	GetCreatedAtCarbon() *carbon.Carbon
 	SetCreatedAt(createdAt string) VersionInterface
-	SoftDeletedAt() string
+
+	GetSoftDeletedAt() string
+	GetSoftDeletedAtCarbon() *carbon.Carbon
 	SetSoftDeletedAt(softDeletedAt string) VersionInterface
 }
 

@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dracory/database"
 	"github.com/dromara/carbon/v2"
 	_ "modernc.org/sqlite"
 )
@@ -47,7 +46,7 @@ func TestStoreVersionCreate(t *testing.T) {
 		SetEntityID("1").
 		SetContent("content1")
 
-	ctx := database.Context(context.Background(), db)
+	ctx := context.Background()
 	err = store.VersionCreate(ctx, version)
 
 	if err != nil {
@@ -77,7 +76,7 @@ func TestStoreVersionDelete(t *testing.T) {
 		SetEntityID("1").
 		SetContent("content1")
 
-	ctx := database.Context(context.Background(), db)
+	ctx := context.Background()
 
 	err = store.VersionCreate(ctx, version)
 
@@ -126,7 +125,7 @@ func TestStoreVersionDeleteByID(t *testing.T) {
 		SetEntityType("webpage").
 		SetEntityID("1").
 		SetContent("content1")
-	ctx := database.Context(context.Background(), db)
+	ctx := context.Background()
 
 	err = store.VersionCreate(ctx, version)
 
@@ -176,7 +175,7 @@ func TestStoreVersionFindByID(t *testing.T) {
 		SetEntityID("1").
 		SetContent("content1")
 
-	ctx := database.Context(context.Background(), db)
+	ctx := context.Background()
 
 	err = store.VersionCreate(ctx, version)
 
@@ -213,12 +212,12 @@ func TestStoreVersionFindByID(t *testing.T) {
 		t.Fatal("Version content MUST be equal. Expected: ", version.Content(), " Found: ", versionFound.Content())
 	}
 
-	if !strings.Contains(versionFound.CreatedAt(), version.CreatedAt()) {
-		t.Fatal("Version created at MUST be equal. Expected: ", version.CreatedAt(), " Found: ", versionFound.CreatedAt())
+	if !strings.Contains(versionFound.GetCreatedAt(), version.GetCreatedAt()) {
+		t.Fatal("Version created at MUST be equal. Expected: ", version.GetCreatedAt(), " Found: ", versionFound.GetCreatedAt())
 	}
 
-	if !strings.Contains(versionFound.SoftDeletedAt(), version.SoftDeletedAt()) {
-		t.Fatal("Version soft deleted at MUST be equal. Expected: ", version.SoftDeletedAt(), " Found: ", versionFound.SoftDeletedAt())
+	if !strings.Contains(versionFound.GetSoftDeletedAt(), version.GetSoftDeletedAt()) {
+		t.Fatal("Version soft deleted at MUST be equal. Expected: ", version.GetSoftDeletedAt(), " Found: ", versionFound.GetSoftDeletedAt())
 	}
 }
 
@@ -244,7 +243,7 @@ func TestStoreVersionSoftDelete(t *testing.T) {
 		SetEntityID("1").
 		SetContent("content1")
 
-	ctx := database.Context(context.Background(), db)
+	ctx := context.Background()
 
 	err = store.VersionCreate(ctx, version)
 	if err != nil {
@@ -307,7 +306,7 @@ func TestStoreVersionUpdate(t *testing.T) {
 		SetEntityID("1").
 		SetContent("content1")
 
-	ctx := database.Context(context.Background(), db)
+	ctx := context.Background()
 
 	err = store.VersionCreate(ctx, version)
 	if err != nil {
@@ -336,8 +335,8 @@ func TestStoreVersionUpdate(t *testing.T) {
 		t.Fatal("Version list MUST NOT be 0")
 	}
 
-	if !strings.Contains(versionList[0].SoftDeletedAt(), now) {
-		t.Fatal("Version soft deleted at MUST be equal. Expected: ", now, " Found: ", versionList[0].SoftDeletedAt())
+	if !strings.Contains(versionList[0].GetSoftDeletedAt(), now) {
+		t.Fatal("Version soft deleted at MUST be equal. Expected: ", now, " Found: ", versionList[0].GetSoftDeletedAt())
 	}
 }
 
@@ -363,7 +362,7 @@ func TestStoreVersionSoftDeleteByID(t *testing.T) {
 		SetEntityID("1").
 		SetContent("content1")
 
-	ctx := database.Context(context.Background(), db)
+	ctx := context.Background()
 
 	err = store.VersionCreate(ctx, version)
 	if err != nil {
@@ -405,7 +404,7 @@ func TestStoreVersionSoftDeleteByID(t *testing.T) {
 		return
 	}
 
-	if versionList[0].SoftDeletedAt() == "" {
+	if versionList[0].GetSoftDeletedAt() == "" {
 		t.Fatal("Version SoftDeletedAt MUST NOT be empty after soft delete by ID")
 	}
 }
@@ -428,7 +427,7 @@ func TestStoreVersionList_Ordering(t *testing.T) {
 		t.Fatal("unexpected nil store")
 	}
 
-	ctx := database.Context(context.Background(), db)
+	ctx := context.Background()
 	entityID := "entity-123"
 	entityType := "webpage"
 
