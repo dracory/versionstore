@@ -47,7 +47,7 @@ type version struct {
 	EntityIDField   string `db:"entity_id"`
 	ContentField    string `db:"content"`
 
-	CreatedAtField orm.CreatedAt
+	orm.CreatedAt
 	soft_delete.SoftDeletesMaxDate
 }
 
@@ -106,15 +106,15 @@ func (o *version) SetContent(content string) VersionInterface {
 
 // GetCreatedAt returns the created at time of the version.
 func (o *version) GetCreatedAt() string {
-	if o.CreatedAtField.CreatedAt.IsZero() {
+	if o.CreatedAt.CreatedAt.IsZero() {
 		return ""
 	}
-	return carbon.CreateFromStdTime(o.CreatedAtField.CreatedAt).ToDateTimeString()
+	return carbon.CreateFromStdTime(o.CreatedAt.CreatedAt).ToDateTimeString()
 }
 
 // GetCreatedAtCarbon returns the created at time of the version as a carbon object.
 func (o *version) GetCreatedAtCarbon() *carbon.Carbon {
-	return carbon.CreateFromStdTime(o.CreatedAtField.CreatedAt)
+	return carbon.CreateFromStdTime(o.CreatedAt.CreatedAt)
 }
 
 // SetCreatedAt sets the created at time of the version.
@@ -122,7 +122,7 @@ func (o *version) SetCreatedAt(createdAt string) VersionInterface {
 	if createdAt == "" {
 		return o
 	}
-	o.CreatedAtField.CreatedAt = carbon.Parse(createdAt, carbon.UTC).StdTime()
+	o.CreatedAt.CreatedAt = carbon.Parse(createdAt, carbon.UTC).StdTime()
 	return o
 }
 

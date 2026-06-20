@@ -274,7 +274,7 @@ func (store *storeImplementation) VersionList(ctx context.Context, options Versi
 		v.SetEntityType(r.EntityType)
 		v.SetEntityID(r.EntityID)
 		v.SetContent(r.Content)
-		v.CreatedAtField.CreatedAt = r.CreatedAt
+		v.CreatedAt.CreatedAt = r.CreatedAt
 		v.SoftDeletedAt = r.SoftDeletedAt
 		list = append(list, v)
 	}
@@ -340,7 +340,8 @@ func (store *storeImplementation) VersionUpdate(ctx context.Context, version Ver
 
 // buildQuery builds a neat query from the version query interface.
 func (store *storeImplementation) buildQuery(options VersionQueryInterface) contractsorm.Query {
-	q := store.db.Query()
+	// Use Model() to enable neat's automatic soft delete handling via SoftDeletesMaxDate
+	q := store.db.Query().Model(&version{})
 
 	if options == nil {
 		return q
@@ -374,10 +375,9 @@ func (store *storeImplementation) buildQuery(options VersionQueryInterface) cont
 		}
 	}
 
+	// Handle soft delete filtering via neat's automatic handling (SoftDeletesMaxDate)
 	if options.HasSoftDeletedIncluded() && options.SoftDeletedIncluded() {
 		q = q.WithSoftDeleted()
-	} else {
-		q = q.Where(COLUMN_SOFT_DELETED_AT+" = ?", carbon.Parse(MAX_DATETIME, carbon.UTC).StdTime())
 	}
 
 	return q
