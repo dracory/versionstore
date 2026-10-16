@@ -2,10 +2,10 @@ package versionstore
 
 import (
 	"time"
+	"uuid"
 
 	"github.com/dracory/neat/database/orm"
 	"github.com/dracory/neat/database/soft_delete"
-	neatuid "github.com/dracory/neat/support/uid"
 	"github.com/dromara/carbon/v2"
 )
 
@@ -14,7 +14,7 @@ import (
 // NewVersion creates a new version with a generated ID and current timestamp
 func NewVersion() VersionInterface {
 	o := &version{}
-	o.SetID(neatuid.GenerateShortID())
+	o.SetID(uuid.NewV7().String())
 	o.SetCreatedAt(carbon.Now(carbon.UTC).ToDateTimeString(carbon.UTC))
 	o.SetSoftDeletedAt(MAX_DATETIME)
 	return o
@@ -41,7 +41,7 @@ func NewVersionFromExistingData(data map[string]string) VersionInterface {
 var _ VersionInterface = (*version)(nil)
 
 type version struct {
-	orm.ShortID
+	orm.StringID
 
 	EntityTypeField string `db:"entity_type"`
 	EntityIDField   string `db:"entity_id"`
@@ -62,12 +62,12 @@ func (o *version) IsSoftDeleted() bool {
 
 // ID returns the id of the version.
 func (o *version) ID() string {
-	return o.ShortID.ID
+	return o.StringID.ID
 }
 
 // SetID sets the id of the version.
 func (o *version) SetID(id string) VersionInterface {
-	o.ShortID.ID = id
+	o.StringID.ID = id
 	return o
 }
 
